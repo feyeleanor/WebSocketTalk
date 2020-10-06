@@ -1,10 +1,10 @@
 package main
 import . "fmt"
+import "io/ioutil"
 import "net/http"
 import "os"
 
-const MESSAGE = "hello world"
-var ADDRESS string
+var ADDRESS, MESSAGE string
 
 func init() {
 	if p := os.Getenv("PORT"); len(p) == 0 {
@@ -12,6 +12,10 @@ func init() {
 	} else {
 		ADDRESS = ":" + p
 	}
+
+	html, e := ioutil.ReadFile("05.html")
+	halt_on_error(1, e)
+	MESSAGE = string(html)
 }
 
 func main() {
@@ -22,6 +26,12 @@ func main() {
 }
 
 func billboard(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "text/html")
 	Fprint(w, MESSAGE)
+}
+
+func halt_on_error(n int, e error) {
+    if e != nil {
+        os.Exit(n)
+    }	
 }
