@@ -1,10 +1,11 @@
 package main
-import . "fmt"
-import "io/ioutil"
+import "fmt"
 import "net/http"
 import "os"
 
-var ADDRESS, MESSAGE string
+const LAUNCH_FAILED = 1
+
+var ADDRESS string
 
 func init() {
 	if p := os.Getenv("PORT"); len(p) == 0 {
@@ -12,26 +13,21 @@ func init() {
 	} else {
 		ADDRESS = ":" + p
 	}
-
-	html, e := ioutil.ReadFile("05.html")
-	halt_on_error(1, e)
-	MESSAGE = string(html)
 }
 
 func main() {
-	http.HandleFunc("/", billboard)
-	if e := http.ListenAndServe(ADDRESS, nil); e != nil {
-		Println(e)
-	}
+	http.HandleFunc("/", print_url)
+	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
-func billboard(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	Fprint(w, MESSAGE)
+func print_url(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain")
+	fmt.Fprint(w, r.URL)
 }
 
 func halt_on_error(n int, e error) {
     if e != nil {
+    	fmt.Println(e)
         os.Exit(n)
     }	
 }

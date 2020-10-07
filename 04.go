@@ -1,7 +1,10 @@
 package main
-import . "fmt"
+import "fmt"
 import "net/http"
 import "os"
+
+const MESSAGE = "hello world"
+const LAUNCH_FAILED = 1
 
 var ADDRESS string
 
@@ -14,13 +17,18 @@ func init() {
 }
 
 func main() {
-	http.HandleFunc("/", print_url)
-	if e := http.ListenAndServe(ADDRESS, nil); e != nil {
-		Println(e)
-	}
+	http.HandleFunc("/", billboard)
+	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
-func print_url(w http.ResponseWriter, r *http.Request) {
+func billboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
-	Fprint(w, r.URL)
+	fmt.Fprint(w, MESSAGE)
+}
+
+func halt_on_error(n int, e error) {
+    if e != nil {
+    	fmt.Println(e)
+        os.Exit(n)
+    }	
 }

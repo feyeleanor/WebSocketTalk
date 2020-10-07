@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>{{.Title}}</title>
+	</head>
+	<body>
+		<h1>{{.Heading}}</h1>
+		<table>
+      <tr>
+        <th>Key</th>
+        <th>Value</th>
+      </tr>
+      {{range $k, $v := .Query}}
+        <tr>
+          <td>{{$k}}</td>
+          <td>{{$v}}</td>
+        </tr>
+      {{end}}
+		</table>
+	</body>
+</html>

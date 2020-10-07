@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>AJAX EXAMPLE</title>
+    <script>
+      {{range $c, $v := .Commands}}
+        function {{$c}}() {
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+              console.log(this.responseText);
+              document.getElementById("event_log").innerHTML += "<span>" + this.responseText + "</span>";
+            }
+          };
+          xhttp.open("GET", "{{$c}}", true);
+          xhttp.send();
+        }
+      {{end}}
+    </script>
+	</head>
+
+	<body>
+		<h1>AJAX EXAMPLE</h1>
+
+    <h2>Known Asynchronous Actions</h2>
+    <div>
+      {{range $c, $v := .Commands}}
+        <span>
+          <button type="button" onclick={{$c}}()>{{$c}}</button>
+        </span>
+      {{end}}
+    </div>
+
+    <h2>Server Output</h2>
+    <div id='event_log'>
+    </div>
+	</body>
+</html>
