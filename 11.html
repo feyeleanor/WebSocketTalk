@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>AJAX EXAMPLE</title>
+    <script src="10.js"></script>
+	</head>
+
+	<body>
+		<h1>AJAX EXAMPLE</h1>
+
+    <h2>Known Asynchronous Actions</h2>
+    <div>
+      {{range $c, $v := .Commands}}
+        <span>
+          <button type="button" onclick="{{$v.JS}};">{{$c}}</button>
+        </span>
+      {{end}}
+    </div>
+
+    <h2>Server Output</h2>
+    <div id='event_log'>
+    </div>
+	</body>
+</html>
