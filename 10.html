@@ -3,21 +3,7 @@
 	<head>
 		<meta charset='UTF-8' />
 		<title>AJAX EXAMPLE</title>
-    <script>
-      {{range $c, $v := .Commands}}
-        function {{$c}}() {
-          var xhttp = new XMLHttpRequest();
-          xhttp.onreadystatechange = function() {
-            if (this.readyState == 4 && this.status == 200) {
-              console.log(this.responseText);
-              document.getElementById("event_log").innerHTML += "<span>" + this.responseText + "</span>";
-            }
-          };
-          xhttp.open("GET", "{{$c}}", true);
-          xhttp.send();
-        }
-      {{end}}
-    </script>
+    <script src="10.js"></script>
 	</head>
 
 	<body>
@@ -27,7 +13,7 @@
     <div>
       {{range $c, $v := .Commands}}
         <span>
-          <button type="button" onclick={{$c}}()>{{$c}}</button>
+          <button type="button" onclick="{{$c}}()">{{$c}}</button>
         </span>
       {{end}}
     </div>
