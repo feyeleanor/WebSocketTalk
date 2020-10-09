@@ -3,7 +3,7 @@
 	<head>
 		<meta charset='UTF-8' />
 		<title>AJAX EXAMPLE</title>
-    <script src="10.js"></script>
+    <script src="{{.Version}}.js"></script>
 	</head>
 
 	<body>
@@ -11,9 +11,9 @@
 
     <h2>Known Asynchronous Actions</h2>
     <div>
-      {{range $c, $v := .Commands}}
+      {{range $c, $v := .CallBridge}}
         <span>
-          <button type="button" onclick="{{$v.JS}};">{{$c}}</button>
+          <button type="button" onclick="{{$c}}();">{{$c}}</button>
         </span>
       {{end}}
     </div>
