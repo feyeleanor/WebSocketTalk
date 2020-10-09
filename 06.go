@@ -1,5 +1,5 @@
 package main
-import . "fmt"
+import "fmt"
 import "io/ioutil"
 import "net/http"
 import "os"
@@ -17,13 +17,13 @@ func init() {
 	}
 
 	html, e := ioutil.ReadFile("06.html")
-	halt_on_error(FILE_READ, e)
+	Abort(FILE_READ, e)
 	MESSAGE = string(html)
 }
 
 func main() {
 	http.HandleFunc("/", billboard)
-	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
+	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
 func billboard(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func billboard(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, MESSAGE)
 }
 
-func halt_on_error(n int, e error) {
+func Abort(n int, e error) {
     if e != nil {
     	fmt.Println(e)
         os.Exit(n)

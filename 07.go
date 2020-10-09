@@ -19,16 +19,16 @@ func init() {
 
 func main() {
 	html, e := ioutil.ReadFile("07.html")
-	halt_on_error(FILE_READ, e)
+	Abort(FILE_READ, e)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		fmt.Fprint(w, string(html))
 	})
-	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
+	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
-func halt_on_error(n int, e error) {
+func Abort(n int, e error) {
     if e != nil {
     	fmt.Println(e)
         os.Exit(n)

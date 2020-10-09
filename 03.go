@@ -19,7 +19,7 @@ func init() {
 
 func main() {
 	http.HandleFunc("/", billboard)
-	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
+	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
 func billboard(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +27,7 @@ func billboard(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, MESSAGE)
 }
 
-func halt_on_error(n int, e error) {
+func Abort(n int, e error) {
     if e != nil {
     	fmt.Println(e)
         os.Exit(n)

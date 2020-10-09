@@ -1,6 +1,7 @@
 package main
 import "fmt"
 import "net/http"
+import "os"
 
 const MESSAGE = "hello world"
 const ADDRESS = ":3000"
@@ -8,7 +9,7 @@ const LAUNCH_FAILED = 1
 
 func main() {
 	http.HandleFunc("/", billboard)
-	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
+	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
 func billboard(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +17,7 @@ func billboard(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, MESSAGE)
 }
 
-func halt_on_error(n int, e error) {
+func Abort(n int, e error) {
     if e != nil {
     	fmt.Println(e)
         os.Exit(n)

@@ -8,6 +8,8 @@ const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
+const VERSION = 11
+
 var ADDRESS string
 
 func init() {
@@ -18,47 +20,41 @@ func init() {
 	}
 }
 
-type CallBridge struct {
-	JS template.JS
-	Go func(http.ResponseWriter, *http.Request)
-}
-
+type Handler func(http.ResponseWriter, *http.Request)
+type CallBridge map[template.JS] Handler
 type PageConfiguration struct {
-	Commands map[string] CallBridge
+	Version int
+	CallBridge
 }
 
 func main() {
-	html, e1 := template.ParseFiles("11.html")
-	halt_on_error(FILE_READ, e1)
-
-	js_temp, e2 := template.ParseFiles("11.js")
-	halt_on_error(FILE_READ, e2)
-
-	p :=  PageConfiguration{
-		map[string] CallBridge {
-			"A": CallBridge { "A()", AJAX_handler("A") },
-			"B": CallBridge { "B()", AJAX_handler("B") },
-			"C": CallBridge { "C()", AJAX_handler("C") },
+	p :=  PageConfiguration{ VERSION, CallBridge {
+			"A": AJAX_handler("A"),
+			"B": AJAX_handler("B"),
+			"C": AJAX_handler("C"),
 		},
 	}
 
+	html := LoadTemplate(Filename(VERSION, "html"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		halt_on_error(BAD_TEMPLATE, html.Execute(w, p))
+		Abort(BAD_TEMPLATE, html.Execute(w, p))
 	})
 
-	http.HandleFunc("/10.js", func(w http.ResponseWriter, r *http.Request) {
+	js_file := Filename(VERSION, "js")
+	js := LoadTemplate(js_file)
+	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
-		halt_on_error(BAD_TEMPLATE, js_temp.Execute(w, p))
+		Abort(BAD_TEMPLATE, js.Execute(w, p))
 	})
 
- 	for c, f := range p.Commands {
-		http.HandleFunc(fmt.Sprint("/", c), f.Go)
+ 	for c, f := range p.CallBridge {
+		http.HandleFunc(fmt.Sprint("/", c), f)
 	}
-	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
+	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
-func halt_on_error(n int, e error) {
+func Abort(n int, e error) {
 	if e != nil {
 		fmt.Println(e)
 		os.Exit(n)
@@ -70,4 +66,15 @@ func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, c)
 	}
+}
+
+func LoadTemplate(s string) (r *template.Template) {
+	var e error
+	r, e = template.ParseFiles(s)
+	Abort(FILE_READ, e)
+	return
+}
+
+func Filename(n int, ext string) string {
+	return fmt.Sprintf("%v.%v", n, ext)
 }

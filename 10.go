@@ -8,7 +8,7 @@ const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
-const RESOURCES = "10"
+const VERSION = 10
 
 var ADDRESS string
 
@@ -25,12 +25,6 @@ type PageConfiguration struct {
 }
 
 func main() {
-	html, e1 := template.ParseFiles(fmt.Sprintf("%v.html", RESOURCES))
-	halt_on_error(FILE_READ, e1)
-
-	js_temp, e2 := template.ParseFiles(fmt.Sprintf("%v.js", RESOURCES))
-	halt_on_error(FILE_READ, e2)
-
 	p :=  PageConfiguration{
 		map[string] func(http.ResponseWriter, *http.Request) {
 			"A": AJAX_handler("A"),
@@ -39,23 +33,26 @@ func main() {
 		},
 	}
 
+	html := LoadTemplate(Filename(VERSION, "html"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		halt_on_error(BAD_TEMPLATE, html.Execute(w, p))
+		Abort(BAD_TEMPLATE, html.Execute(w, p))
 	})
 
-	http.HandleFunc("/10.js", func(w http.ResponseWriter, r *http.Request) {
+	js_file := Filename(VERSION, "js")
+	js := LoadTemplate(js_file)
+	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
-		halt_on_error(BAD_TEMPLATE, js_temp.Execute(w, p))
+		Abort(BAD_TEMPLATE, js.Execute(w, p))
 	})
 
  	for c, f := range p.Commands {
-		http.HandleFunc(fmt.Sprint("/", c), f)
+		http.HandleFunc("/" + c, f)
 	}
-	halt_on_error(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
+	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
-func halt_on_error(n int, e error) {
+func Abort(n int, e error) {
 	if e != nil {
 		fmt.Println(e)
 		os.Exit(n)
@@ -67,4 +64,15 @@ func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, c)
 	}
+}
+
+func LoadTemplate(s string) (r *template.Template) {
+	var e error
+	r, e = template.ParseFiles(s)
+	Abort(FILE_READ, e)
+	return
+}
+
+func Filename(n int, ext string) string {
+	return fmt.Sprintf("%v.%v", n, ext)
 }
