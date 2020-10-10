@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>SIMPLE GUESTBOOK EXAMPLE</title>
+    <script src="{{.Version}}.js"></script>
+	</head>
+
+	<body>
+		<h1>SIMPLE GUESTBOOK</h1>
+
+    <h2>Add Message</h2>
+    <form id="addMessage">
+      <div>
+        <label for="author">Name</label>
+        <input type="text" id="author" name="author">
+      </div>
+      <div>
+        <label for="message">Comment</label>
+        <textarea id="message" name="message"></textarea>
+      </div>
+      <input type="button" onclick="post_comment();" value="Submit!">
+    </form>
+
+    <h2>Server Output</h2>
+    <div id="message_list">
+    </div>
+	</body>
+</html>
