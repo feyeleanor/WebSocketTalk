@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>SIMPLE GUESTBOOK EXAMPLE</title>
+	</head>
+
+	<body>
+		<h1>SIMPLE GUESTBOOK</h1>
+
+    <div>
+      {{range $c, $v := .Messages}}
+        <div>
+          <h2>{{$v.Time}}</h2>
+          <div>
+            {{$v.Author}}
+          </div>
+
+        </div>
+      {{end}}
+    </div>
+
+    <h2>Server Output</h2>
+    <div id='event_log'>
+    </div>
+	</body>
+</html>
