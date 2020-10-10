@@ -11,6 +11,8 @@ const BAD_TEMPLATE = 3
 
 const VERSION = 13
 
+const TIME_FORMAT = "Mon Jan 2 15:04:05 MST 2006"
+
 var ADDRESS string
 
 func init() {
@@ -44,8 +46,15 @@ func main() {
 
 		case "POST":
 			r.ParseForm()
-
-
+			m := Message {
+				Time: time.Now(),
+				Author: r.PostForm.Get("a"),
+				Content: r.PostForm.Get("m"),
+			}
+			p.Messages = append(p.Messages, m)
+			w.Write([]byte(
+				fmt.Sprintf("%v\n%v\n%v", m.Author, m.Time.Format(TIME_FORMAT), m.Content),
+			))
 		}
 	})
 
@@ -56,9 +65,6 @@ func main() {
 		Abort(BAD_TEMPLATE, js.Execute(w, p))
 	})
 
- 	for c, f := range p.CallBridge {
-		http.HandleFunc(fmt.Sprint("/", c), f)
-	}
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
@@ -66,19 +72,6 @@ func Abort(n int, e error) {
 	if e != nil {
 		fmt.Println(e)
 		os.Exit(n)
-	}
-}
-
-func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		switch r.Method {
-		case "GET":
-			fmt.Fprintf(w, "GET (%v) %v", c, r.URL)
-		case "POST":
-			r.ParseForm()
-			fmt.Fprintf(w, "POST (%v) %v {%v}", c, r.URL, r.Form)
-		}
 	}
 }
 
