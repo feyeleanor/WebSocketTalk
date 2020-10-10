@@ -1,5 +1,5 @@
-function print(m) {
-	document.getElementById("event_log").innerHTML += "<div>" + m + "</div>";
+function print(e, m) {
+	document.getElementById(e).innerHTML += "<div>" + m + "</div>";
 }
 
 {{range $c, $v := .CallBridge}}
@@ -8,7 +8,7 @@ function print(m) {
 		xhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
 				console.log(this.responseText);
-				print(this.responseText);
+				print("event_log", this.responseText);
 			}
 		};
 		switch(method) {
