@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>SIMPLE GUESTBOOK EXAMPLE</title>
+    <script src="{{.Version}}.js"></script>
+	</head>
+
+	<body>
+		<h1>MESSAGE FEEDS</h1>
+    <div id="id_banner"></div>
+
+    <h2>Add Message</h2>
+    <form id="addMessage">
+      <input type="hidden" id="client_id" name="client_id" value="{{.Clients}}">
+      <div>
+        <label for="recipient">Recipient</label>
+        <input type="text" id="recipient" name="recipient">
+      </div>
+      <div>
+        <label for="message">Comment</label>
+        <textarea id="message" name="message"></textarea>
+      </div>
+      <input type="button" onclick="post_comment();" value="Submit!">
+    </form>
+
+    <h2>Broadcast Messages</h2>
+    <div id="public_count"></div>
+    <div id="public_list"></div>
+
+    <h2>Private Messages</h2>
+    <div id="private_count"></div>
+    <div id="private_list"></div>
+	</body>
+</html>
