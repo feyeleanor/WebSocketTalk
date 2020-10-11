@@ -69,6 +69,7 @@ func main() {
 	})
 
 	http.HandleFunc("/messages", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprintf(w, "%v", len(p.Messages))
 	})
 
