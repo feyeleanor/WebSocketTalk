@@ -3,7 +3,7 @@ function read_var(v) {
 }
 
 function print(e, m) {
-	document.getElementById(e).innerHTML += "<div>" + m + "</div>";
+	document.getElementById(e).innerHTML += `<div>${m}</div>`;
 }
 
 function format_message(t) {
@@ -11,7 +11,7 @@ function format_message(t) {
 	var author = m.shift();
 	var timestamp = m.shift();
 	var message = m.shift();
-	return `<div><h2>${author}</h2><div>${timestamp}</div><div>${message}</div></div>`;
+	return `<h3>${author}</h3><div>${timestamp}</div><div>${message}</div>`;
 }
 
 function post_comment() {

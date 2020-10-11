@@ -1,5 +1,5 @@
 function print(e, m) {
-	document.getElementById(e).innerHTML += "<div>" + m + "</div>";
+	document.getElementById(e).innerHTML += `<div>${m}</div>`;
 }
 
 {{range $c, $v := .Commands}}

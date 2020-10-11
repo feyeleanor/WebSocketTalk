@@ -3,12 +3,12 @@ function read_var(v) {
 }
 
 function print(e, m) {
-	document.getElementById(e).innerHTML += "<div>" + m + "</div>";
+	document.getElementById(e).innerHTML += `<div>${m}</div>`;
 }
 
 function format_message(t) {
 	var m = t.split("\n");
-	return `<div><h2>${m[0]}</h2><div>${m[1]}</div><div>${m[2]}</div></div>`;
+	return `<h3>${m[0]}</h3><div>${m[1]}</div><div>${m[2]}</div>`;
 }
 
 function post_comment() {
