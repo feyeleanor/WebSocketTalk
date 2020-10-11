@@ -15,7 +15,6 @@ function post_comment() {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			console.log(this.responseText);
 			print("message_list", format_message(this.responseText));
 			var f = document.forms["addMessage"];
 			f.author.value = "";
