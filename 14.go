@@ -44,10 +44,11 @@ func main() {
 	})
 
 	http.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		r.ParseForm()
 		switch r.Method {
 		case "GET":
-			w.Header().Set("Content-Type", "text/plain")
-			if i := r.URL.Query()["i"]; len(i) == 0 {
+			if i := r.Form["i"]; len(i) == 0 {
 				http.NotFound(w, r)
 			} else {
 				if i, e := ParseIndex(i[0]); e == nil && i < len(p.Messages) {
@@ -58,7 +59,6 @@ func main() {
 				}
 			}
 		case "POST":
-			r.ParseForm()
 			m := Message {
 				TimeStamp: time.Now().Format(TIME_FORMAT),
 				Author: r.PostForm.Get("a"),
