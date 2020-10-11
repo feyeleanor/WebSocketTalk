@@ -25,8 +25,7 @@ func init() {
 }
 
 type Message struct {
-	time.Time
-	Author, Content string
+	TimeStamp, Author, Content string
 }
 
 type Handler func(http.ResponseWriter, *http.Request)
@@ -45,17 +44,15 @@ func main() {
 	})
 
 	http.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
 		switch r.Method {
 		case "GET":
+			w.Header().Set("Content-Type", "text/plain")
 			if i := r.URL.Query()["i"]; len(i) == 0 {
 				http.NotFound(w, r)
 			} else {
 				if i, e := ParseIndex(i[0]); e == nil && i < len(p.Messages) {
 					m := p.Messages[i]
-					w.Write([]byte(
-						fmt.Sprintf("%v\n%v\n%v", m.Author, m.Time.Format(TIME_FORMAT), m.Content),
-					))
+					fmt.Fprintf(w, "%v\n%v\n%v", m.Author, m.TimeStamp, m.Content)
 				} else {
 					http.NotFound(w, r)
 				}
@@ -63,12 +60,16 @@ func main() {
 		case "POST":
 			r.ParseForm()
 			m := Message {
-				Time: time.Now(),
+				TimeStamp: time.Now().Format(TIME_FORMAT),
 				Author: r.PostForm.Get("a"),
 				Content: r.PostForm.Get("m"),
 			}
 			p.Messages = append(p.Messages, m)
 		}
+	})
+
+	http.HandleFunc("/messages", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "%v", len(p.Messages))
 	})
 
 	js_file := Filename(VERSION, "js")
