@@ -27,8 +27,6 @@ func init() {
 type Message struct {
 	TimeStamp, Author, Content string
 }
-
-type Handler func(http.ResponseWriter, *http.Request)
 type PageConfiguration struct {
 	Version int
 	Messages []Message
