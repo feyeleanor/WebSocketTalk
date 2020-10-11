@@ -59,12 +59,11 @@ func main() {
 				}
 			}
 		case "POST":
-			m := Message {
+			p.Messages = append(p.Messages, Message {
 				TimeStamp: time.Now().Format(TIME_FORMAT),
 				Author: r.PostForm.Get("a"),
 				Content: r.PostForm.Get("m"),
-			}
-			p.Messages = append(p.Messages, m)
+			})
 		}
 	})
 
