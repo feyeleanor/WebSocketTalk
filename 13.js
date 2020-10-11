@@ -27,3 +27,11 @@ function post_comment() {
 	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	xhttp.send(`a=${read_var('author')}&m=${read_var('message')}`);
 }
+
+function fill_page() {
+	{{range $c, $v := .Messages}}
+		print("message_list", format_message("{{$v.Author}}\n{{$v.TimeStamp}}\n{{$v.Content}}"))
+	{{end}}
+}
+
+window.onload = fill_page
