@@ -21,11 +21,13 @@ func init() {
 }
 
 type PageConfiguration struct {
+	Version int
 	Commands map[string] func(http.ResponseWriter, *http.Request)
 }
 
 func main() {
 	p :=  PageConfiguration{
+		VERSION,
 		map[string] func(http.ResponseWriter, *http.Request) {
 			"A": AJAX_handler("A"),
 			"B": AJAX_handler("B"),
