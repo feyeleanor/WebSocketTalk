@@ -42,7 +42,7 @@ function post_comment() {
 	xhttp.send(`a=${read_var('author')}&m=${read_var('message')}`);
 }
 
-function server_get(url, response_handler) {
+function ajax_get(url, response_handler) {
 	var xhttp = ajax_setup(x => response_handler(x.responseText));
 	xhttp.open("GET", url, true);
 	xhttp.send();
@@ -53,13 +53,13 @@ function server_link(interval, f) {
 }
 
 server_link(1000, () =>
-	server_get(`/message?i=${comments_seen}`, response => {
+	ajax_get(`/message?i=${comments_seen}`, response => {
 		print("message_list", format_message(response));
 		comments_seen += 1;
 	})
 );
 
 server_link(250, () =>
-	server_get("/messages", response =>
+	ajax_get("/messages", response =>
 		update("message_count", `messages on server: ${response}`)),
 );
