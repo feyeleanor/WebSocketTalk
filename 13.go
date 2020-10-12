@@ -63,7 +63,7 @@ func main() {
 				Content: r.PostForm.Get("m"),
 			}
 			p.Messages = append(p.Messages, m)
-			fmt.Fprintf(w, "%v\n%v\n%v", m.Author, m.TimeStamp, m.Content)
+			fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
 		}
 	})
 

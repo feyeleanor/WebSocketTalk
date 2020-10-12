@@ -11,7 +11,7 @@ function update(e, m) {
 }
 
 function format_message(t) {
-	var m = t.split("\n");
+	var m = t.split("\t");
 	var author = m.shift();
 	var timestamp = m.shift();
 	var message = m.shift();
@@ -120,7 +120,7 @@ var monitor_feed;
 window.onload = function() {
 	update("id_banner", `contact ID: ${read_var('client_id')}`);
 	monitor_feed = server_socket("ws://localhost:3000/monitor", m => {
-		var d = m.data.split("\n");
+		var d = m.data.split("\t");
 		update_message_buffer("event_list", d[0], d[1])
 	})
 }

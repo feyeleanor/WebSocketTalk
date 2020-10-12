@@ -71,7 +71,7 @@ func main() {
 			ph := p.PigeonHoles[q]
 			if i := MessageIndex(r); i < len(ph) {
 				m := ph[i]
-				fmt.Fprintf(w, "%v\n%v\n%v", m.Author, m.TimeStamp, m.Content)
+				fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
 			} else {
 				http.NotFound(w, r)
 			}

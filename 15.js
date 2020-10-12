@@ -11,7 +11,7 @@ function update(e, m) {
 }
 
 function format_message(t) {
-	var m = t.split("\n");
+	var m = t.split("\t");
 	var author = m.shift();
 	var timestamp = m.shift();
 	var message = m.shift();

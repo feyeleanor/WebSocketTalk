@@ -7,7 +7,7 @@ function print(e, m) {
 }
 
 function format_message(t) {
-	var m = t.split("\n");
+	var m = t.split("\t");
 	return `<h3>${m[0]}</h3><div>${m[1]}</div><div>${m[2]}</div>`;
 }
 
@@ -29,6 +29,6 @@ function post_comment() {
 
 window.onload = function() {
 	{{range $c, $v := .Messages}}
-		print("message_list", format_message("{{$v.Author}}\n{{$v.TimeStamp}}\n{{$v.Content}}"))
+		print("message_list", format_message("{{$v.Author}}\t{{$v.TimeStamp}}\t{{$v.Content}}"))
 	{{end}}
 }

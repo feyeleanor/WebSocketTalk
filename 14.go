@@ -64,7 +64,7 @@ func main() {
 			} else {
 				if i, e := ParseIndex(i[0]); e == nil && i < len(p.Messages) {
 					m := p.Messages[i]
-					fmt.Fprintf(w, "%v\n%v\n%v", m.Author, m.TimeStamp, m.Content)
+					fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
 				} else {
 					http.NotFound(w, r)
 				}

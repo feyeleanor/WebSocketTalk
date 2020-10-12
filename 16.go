@@ -66,7 +66,6 @@ func main() {
 	}))
 
 	http.HandleFunc("/message", Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/message")
 		w.Header().Set("Content-Type", "text/plain")
 		r.ParseForm()
 		switch r.Method {
@@ -75,7 +74,7 @@ func main() {
 			ph := p.PigeonHoles[q]
 			if i := MessageIndex(r); i < len(ph) {
 				m := ph[i]
-				fmt.Fprintf(w, "%v\n%v\n%v", m.Author, m.TimeStamp, m.Content)
+				fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
 			} else {
 				http.NotFound(w, r)
 			}
@@ -90,14 +89,12 @@ func main() {
 	}))
 
 	http.HandleFunc("/messages", Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/messages")
 		w.Header().Set("Content-Type", "text/plain")
 		r.ParseForm()
 		fmt.Fprint(w, len(p.PigeonHoles[Feed("a", r)]))
 	}))
 
 	http.HandleFunc("/" + js_file, Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/" + js_file)
 		w.Header().Set("Content-Type", "application/javascript")
 		Abort(BAD_TEMPLATE, js.Execute(w, p))
 	}))
@@ -110,7 +107,7 @@ func main() {
 			case m := <- events:
 				events_broadcast += 1
 				for _, ws := range monitor_feeds {
-					fmt.Fprintf(ws, "%v\n%v", events_broadcast, m)
+					fmt.Fprintf(ws, "%v\t%v", events_broadcast, m)
 					
 				}
 			default:
@@ -131,7 +128,6 @@ func main() {
 	}))
 
 	http.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/events")
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, events_broadcast)
 	})
