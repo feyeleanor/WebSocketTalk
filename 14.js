@@ -15,7 +15,7 @@ function format_message(t) {
 	var author = m.shift();
 	var timestamp = m.shift();
 	var message = m.shift();
-	return `<h3>${author}</h3><div>${timestamp}</div><div>${message}</div>`;
+	return `<hr/><h3>From: ${author}</h3><div>Date: ${timestamp}</div><div>${message}</div>`;
 }
 
 function ajax_setup(f) {

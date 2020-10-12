@@ -8,7 +8,7 @@ function print(e, m) {
 
 function format_message(t) {
 	var m = t.split("\t");
-	return `<h3>${m[0]}</h3><div>${m[1]}</div><div>${m[2]}</div>`;
+	return `<hr/><h3>From: ${m[0]}</h3><div>Date: ${m[1]}</div><div>${m[2]}</div>`;
 }
 
 function post_comment() {
