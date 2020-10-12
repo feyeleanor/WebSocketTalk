@@ -11,14 +11,15 @@ const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
-const VERSION = 15
-
 const TIME_FORMAT = "Mon Jan 2 15:04:05 MST 2006"
 const PUBLIC_ID = "public"
 
-var ADDRESS string
+var VERSION, ADDRESS string
 
 func init() {
+	s := strings.Split(os.Args[0], "/")
+	VERSION = s[len(s) - 1]
+
 	if p := os.Getenv("PORT"); len(p) == 0 {
 		ADDRESS = ":3000"
 	} else {
@@ -32,7 +33,7 @@ type Message struct {
 type PigeonHole []Message
 type PigeonHoles map[string] PigeonHole
 type PageConfiguration struct {
-	Version int
+	Version string
 	Clients int
 	PigeonHoles
 }
@@ -43,7 +44,7 @@ func main() {
 		PigeonHoles: make(PigeonHoles),
 	}
 
-	html := LoadTemplate(Filename(VERSION, "html"))
+	html := LoadTemplate(VERSION + ".html")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		Abort(BAD_TEMPLATE, html.Execute(w, p))
@@ -79,7 +80,7 @@ func main() {
 		fmt.Fprint(w, len(p.PigeonHoles[Feed("a", r)]))
 	})
 
-	js_file := Filename(VERSION, "js")
+	js_file := VERSION + ".js"
 	js := LoadTemplate(js_file)
 	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
@@ -101,10 +102,6 @@ func LoadTemplate(s string) (r *template.Template) {
 	r, e = template.ParseFiles(s)
 	Abort(FILE_READ, e)
 	return
-}
-
-func Filename(n int, ext string) string {
-	return fmt.Sprintf("%v.%v", n, ext)
 }
 
 func ParseIndex(s string) (int, error) {

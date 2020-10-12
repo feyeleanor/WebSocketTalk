@@ -3,6 +3,7 @@ import "fmt"
 import "io/ioutil"
 import "net/http"
 import "os"
+import "strings"
 
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
@@ -16,7 +17,8 @@ func init() {
 		ADDRESS = ":" + p
 	}
 
-	html, e := ioutil.ReadFile("06.html")
+	s := strings.Split(os.Args[0], "/")
+	html, e := ioutil.ReadFile(s[len(s) - 1] + ".html")
 	Abort(FILE_READ, e)
 	MESSAGE = string(html)
 }
