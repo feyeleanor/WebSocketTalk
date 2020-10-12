@@ -1,6 +1,6 @@
 package main
 import "fmt"
-import "html/template"
+import H "html/template"
 import "net/http"
 import "os"
 import "strings"
@@ -23,13 +23,17 @@ func init() {
 }
 
 type Handler func(http.ResponseWriter, *http.Request)
-type CallBridge map[template.JS] Handler
+type CallBridge map[H.JS] Handler
 type PageConfiguration struct {
 	Version string
 	CallBridge
 }
 
 func main() {
+	var e error
+	var html *H.Template
+	var js *H.Template
+
 	p :=  PageConfiguration{ VERSION, CallBridge {
 			"A": AJAX_handler("A"),
 			"B": AJAX_handler("B"),
@@ -37,14 +41,18 @@ func main() {
 		},
 	}
 
-	html := LoadTemplate(VERSION + ".html")
+	html, e = H.ParseFiles(VERSION + ".html")
+	Abort(FILE_READ, e)
+
+	js_file := VERSION + ".js"
+	js, e = H.ParseFiles(js_file)
+	Abort(FILE_READ, e)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		Abort(BAD_TEMPLATE, html.Execute(w, p))
 	})
 
-	js_file := VERSION + ".js"
-	js := LoadTemplate(js_file)
 	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		Abort(BAD_TEMPLATE, js.Execute(w, p))
@@ -74,11 +82,4 @@ func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
 			fmt.Fprintf(w, "POST (%v) %v {%v}", c, r.URL, r.Form)
 		}
 	}
-}
-
-func LoadTemplate(s string) (r *template.Template) {
-	var e error
-	r, e = template.ParseFiles(s)
-	Abort(FILE_READ, e)
-	return
 }

@@ -1,9 +1,9 @@
 package main
 import "fmt"
-import "text/template"
 import "net/http"
 import "os"
 import "strings"
+import T "text/template"
 
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
@@ -28,6 +28,10 @@ type PageConfiguration struct {
 }
 
 func main() {
+	var e error
+	var html *T.Template
+	var js *T.Template
+
 	p :=  PageConfiguration{
 		VERSION,
 		map[string] func(http.ResponseWriter, *http.Request) {
@@ -37,14 +41,18 @@ func main() {
 		},
 	}
 
-	html := LoadTemplate(VERSION + ".html")
+	html, e = T.ParseFiles(VERSION + ".html")
+	Abort(FILE_READ, e)
+
+	js_file := VERSION + ".js"
+	js, e = T.ParseFiles(js_file)
+	Abort(FILE_READ, e)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		Abort(BAD_TEMPLATE, html.Execute(w, p))
 	})
 
-	js_file := VERSION + ".js"
-	js := LoadTemplate(js_file)
 	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		Abort(BAD_TEMPLATE, js.Execute(w, p))
@@ -68,11 +76,4 @@ func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, c)
 	}
-}
-
-func LoadTemplate(s string) (r *template.Template) {
-	var e error
-	r, e = template.ParseFiles(s)
-	Abort(FILE_READ, e)
-	return
 }

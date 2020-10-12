@@ -1,10 +1,11 @@
 package main
 import "fmt"
-import "html/template"
+import H "html/template"
 import "net/http"
 import "os"
 import "strconv"
 import "strings"
+import T "text/template"
 import "time"
 
 const LAUNCH_FAILED = 1
@@ -39,12 +40,22 @@ type PageConfiguration struct {
 }
 
 func main() {
+	var e error
+	var html *H.Template
+	var js *T.Template
+
 	p :=  &PageConfiguration {
 		Version: VERSION,
 		PigeonHoles: make(PigeonHoles),
 	}
 
-	html := LoadTemplate(VERSION + ".html")
+	html, e = H.ParseFiles(VERSION + ".html")
+	Abort(FILE_READ, e)
+
+	js_file := VERSION + ".js"
+	js, e = T.ParseFiles(js_file)
+	Abort(FILE_READ, e)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		Abort(BAD_TEMPLATE, html.Execute(w, p))
@@ -80,8 +91,6 @@ func main() {
 		fmt.Fprint(w, len(p.PigeonHoles[Feed("a", r)]))
 	})
 
-	js_file := VERSION + ".js"
-	js := LoadTemplate(js_file)
 	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		Abort(BAD_TEMPLATE, js.Execute(w, p))
@@ -95,13 +104,6 @@ func Abort(n int, e error) {
 		fmt.Println(e)
 		os.Exit(n)
 	}
-}
-
-func LoadTemplate(s string) (r *template.Template) {
-	var e error
-	r, e = template.ParseFiles(s)
-	Abort(FILE_READ, e)
-	return
 }
 
 func ParseIndex(s string) (int, error) {

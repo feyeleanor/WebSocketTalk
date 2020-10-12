@@ -1,10 +1,11 @@
 package main
 import "fmt"
-import "html/template"
+import H "html/template"
 import "net/http"
 import "os"
 import "strings"
 import "time"
+import T "text/template"
 
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
@@ -34,9 +35,19 @@ type PageConfiguration struct {
 }
 
 func main() {
+	var e error
+	var html *H.Template
+	var js *T.Template
+
 	p :=  PageConfiguration{ Version: VERSION }
 
-	html := LoadTemplate(VERSION + ".html")
+	html, e = H.ParseFiles(VERSION + ".html")
+	Abort(FILE_READ, e)
+
+	js_file := VERSION + ".js"
+	js, e = T.ParseFiles(js_file)
+	Abort(FILE_READ, e)
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
@@ -56,8 +67,6 @@ func main() {
 		}
 	})
 
-	js_file := VERSION + ".js"
-	js := LoadTemplate(js_file)
 	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript")
 		Abort(BAD_TEMPLATE, js.Execute(w, p))
@@ -71,11 +80,4 @@ func Abort(n int, e error) {
 		fmt.Println(e)
 		os.Exit(n)
 	}
-}
-
-func LoadTemplate(s string) (r *template.Template) {
-	var e error
-	r, e = template.ParseFiles(s)
-	Abort(FILE_READ, e)
-	return
 }
