@@ -55,7 +55,7 @@ function server_link(interval, f) {
 server_link(1000, () =>
 	ajax_get(`/message?i=${comments_seen}`, response => {
 		print("message_list", format_message(response));
-		comments_seen += 1;
+		comments_seen++;
 	})
 );
 

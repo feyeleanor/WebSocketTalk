@@ -61,14 +61,14 @@ function server_link(interval, f) {
 server_link(1000, () =>
 	ajax_get(`/message?r=public&i=${public_seen}`, response => {
 		print("public_list", format_message(response));
-		public_seen += 1;
+		public_seen++;
 	})
 );
 
 server_link(1000, () =>
 	ajax_get(`/message?r=${read_var('client_id')}&i=${private_seen}`, response => {
 		print("private_list", format_message(response));
-		private_seen += 1;
+		private_seen++;
 	})
 );
 
