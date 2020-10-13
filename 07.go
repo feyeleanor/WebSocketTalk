@@ -10,6 +10,8 @@ const FILE_READ = 2
 
 var VERSION, ADDRESS string
 
+type WebHandler func(w http.ResponseWriter, r *http.Request)
+
 func init() {
 	s := strings.Split(os.Args[0], "/")
 	VERSION = s[len(s) - 1]
@@ -25,10 +27,7 @@ func main() {
 	html, e := ioutil.ReadFile(VERSION + ".html")
 	Abort(FILE_READ, e)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprint(w, string(html))
-	})
+	http.HandleFunc("/", ServeStatic("text/html", html))
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
@@ -37,4 +36,11 @@ func Abort(n int, e error) {
     	fmt.Println(e)
         os.Exit(n)
     }	
+}
+
+func ServeStatic(mime_type string, b []byte) WebHandler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", mime_type)
+		fmt.Fprint(w, string(b))
+	}
 }
