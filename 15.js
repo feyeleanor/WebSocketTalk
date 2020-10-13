@@ -40,6 +40,7 @@ function ajax_post(xhttp, url, params) {
 	xhttp.send(params);
 }
 
+const client_id = {{.Clients}};
 var public_seen = 0;
 var private_seen = 0;
 
@@ -49,9 +50,7 @@ function post_comment() {
 		f.recipient.value = "";
 		f.message.value = "";
 	});
-
-	var recipient = read_var('recipient');
-	ajax_post(xhttp, "message", `a=${read_var('client_id')}&m=${read_var('message')}&r=${recipient}`);
+	ajax_post(xhttp, "message", `a=${client_id}&m=${read_var('message')}&r=${read_var('recipient')}`);
 }
 
 function server_link(interval, f) {
@@ -66,7 +65,7 @@ server_link(1000, () =>
 );
 
 server_link(1000, () =>
-	ajax_get(`/message?r=${read_var('client_id')}&i=${private_seen}`, response => {
+	ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
 		print("private_list", format_message(response));
 		private_seen++;
 	})
@@ -77,9 +76,9 @@ server_link(250, () =>
 		update("public_count", `messages on server: ${response}`)));
 
 server_link(250, () =>
-	ajax_get(`/messages?r=private&a=${read_var('client_id')}`, response =>
+	ajax_get(`/messages?r=private&a=${client_id}`, response =>
 		update("private_count", `messages on server: ${response}`)));
 
 window.onload = function() {
-	update("id_banner", `contact ID: ${read_var('client_id')}`);
+	update("id_banner", `contact ID: ${client_id}`);
 }

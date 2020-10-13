@@ -1,13 +1,15 @@
 package main
+import "bytes"
+import "errors"
 import "fmt"
 import "golang.org/x/net/websocket"
-import H "html/template"
 import "io/ioutil"
 import "net/http"
 import "os"
 import "strconv"
 import "strings"
-import T "text/template"
+import "sync"
+import "text/template"
 import "time"
 
 const LAUNCH_FAILED = 1
@@ -30,77 +32,92 @@ func init() {
 	}
 }
 
+type WebHandler func(http.ResponseWriter, *http.Request)
 type Message struct {
 	TimeStamp, Author, Content string
 }
 type PigeonHole []Message
 type PigeonHoles map[string] PigeonHole
 type PageConfiguration struct {
-	Version string
 	Clients int
 	PigeonHoles
+	sync.Mutex
+}
+func (p *PageConfiguration) AddClient(f func()) {
+	p.Lock()
+	f()
+	p.Clients += 1
+	p.Unlock()
 }
 
 func main() {
-	var e error
-	var html *H.Template
-	var js *T.Template
-
-	p :=  &PageConfiguration {
-		Version: VERSION,
-		PigeonHoles: make(PigeonHoles),
-	}
+	p :=  &PageConfiguration { PigeonHoles: make(PigeonHoles) }
 	events := make(chan string, 4096)
+	events_broadcast := 0
 
-	html, e = H.ParseFiles(VERSION + ".html")
+	html, e := ioutil.ReadFile(VERSION + ".html")
 	Abort(FILE_READ, e)
 
-	js_file := VERSION + ".js"
-	js, e = T.ParseFiles(js_file)
+	js, e := template.ParseFiles(VERSION + ".js")
 	Abort(FILE_READ, e)
 
-	http.HandleFunc("/", Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		Abort(BAD_TEMPLATE, html.Execute(w, p))
-		p.Clients += 1
-	}))
+	http.HandleFunc("/", Monitor(events, ServeContent("text/html", html)))
+	http.HandleFunc("/js",
+		Monitor(events,
+			ServeContent("application/javascript", func(*http.Request) interface{} {
+				var b bytes.Buffer
+				p.AddClient(func() {
+					Abort(BAD_TEMPLATE, js.Execute(&b, p))			
+				})
+				return b.String()
+			}),
+		),
+	)
 
-	http.HandleFunc("/message", Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		r.ParseForm()
-		switch r.Method {
-		case "GET":
-			q := Feed("r", r)
-			ph := p.PigeonHoles[q]
-			if i := MessageIndex(r); i < len(ph) {
-				m := ph[i]
-				fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
-			} else {
-				http.NotFound(w, r)
-			}
-		case "POST":
-			q := Feed("r", r)
-			p.PigeonHoles[q] = append(p.PigeonHoles[q], Message {
-				TimeStamp: time.Now().Format(TIME_FORMAT),
-				Author: r.PostForm.Get("a"),
-				Content: r.PostForm.Get("m"),
-			})
-		}
-	}))
+	http.HandleFunc("/events",
+		ServeContent("text/plain", func(*http.Request) interface{} {
+			return events_broadcast
+		}),
+	)
 
-	http.HandleFunc("/messages", Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		r.ParseForm()
-		fmt.Fprint(w, len(p.PigeonHoles[Feed("a", r)]))
-	}))
+	http.HandleFunc("/messages",
+		Monitor(events,
+			ServeContent("text/plain", func(r *http.Request) interface{} {
+				r.ParseForm()
+				return len(p.PigeonHoles[Feed("a", r)])
+			}),
+		),
+	)
 
-	http.HandleFunc("/" + js_file, Monitor(events, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/javascript")
-		Abort(BAD_TEMPLATE, js.Execute(w, p))
-	}))
+	http.HandleFunc("/message",
+		Monitor(events,
+			ServeContent("text/plain", func(r *http.Request) (x interface{}) {
+				r.ParseForm()
+				switch r.Method {
+				case "GET":
+					q := Feed("r", r)
+					ph := p.PigeonHoles[q]
+					if i := MessageIndex(r); i < len(ph) {
+						m := ph[i]
+						x = fmt.Sprintf("%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
+					} else {
+						x = errors.New("invalid index")
+					}
+
+				case "POST":
+					q := Feed("r", r)
+					p.PigeonHoles[q] = append(p.PigeonHoles[q], Message {
+						TimeStamp: time.Now().Format(TIME_FORMAT),
+						Author: r.PostForm.Get("a"),
+						Content: r.PostForm.Get("m"),
+					})
+				}
+				return
+			}),
+		),
+	)
 
 	var monitor_feeds []*websocket.Conn
-	var events_broadcast int
 	go func() {
 		for {
 			select {
@@ -127,11 +144,6 @@ func main() {
 		ioutil.ReadAll(ws)
 	}))
 
-	http.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		fmt.Fprint(w, events_broadcast)
-	})
-
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
 
@@ -147,6 +159,25 @@ func ParseIndex(s string) (int, error) {
 	return int(u), e
 }
 
+func ServeContent(mime_type string, v interface{}) WebHandler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", mime_type)
+		switch v := v.(type) {
+		case func(*http.Request) interface{}:
+			x := v(r)
+			if _, ok := x.(error); ok {
+				http.NotFound(w, r)
+			} else {
+				fmt.Fprintf(w, "%v", x)
+			}
+		case []byte:
+			fmt.Fprint(w, string(v))
+		default:
+			fmt.Fprintf(w, "%v", v)
+		}
+	}
+}
+
 func MessageIndex(r *http.Request) (i int) {
 	if len(r.Form["i"]) != 0 {
 		if n, e := ParseIndex(r.Form["i"][0]); e == nil {
@@ -157,15 +188,16 @@ func MessageIndex(r *http.Request) (i int) {
 }
 
 func Feed(n string, r *http.Request) (s string) {
-	if id := r.Form[strings.ToLower(n)]; len(id) == 0 {
+	switch id := r.Form[strings.ToLower(n)]; {
+	case len(id) == 0:
+		fallthrough
+	case len(id[0]) == 0:
 		s = PUBLIC_ID
-	} else if s = id[0]; len(s) == 0 {
-		s = PUBLIC_ID
+	default:
+		s = id[0]
 	}
 	return
 }
-
-type WebHandler func(http.ResponseWriter, *http.Request)
 
 func Monitor(c chan string, f WebHandler) WebHandler {
 	return func(w http.ResponseWriter, r *http.Request) {

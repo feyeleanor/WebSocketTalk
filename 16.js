@@ -51,6 +51,7 @@ function ajax_post(xhttp, url, params) {
 	xhttp.send(params);
 }
 
+const client_id = {{.Clients}};
 var public_seen = 0;
 var public_total = 0;
 var private_seen = 0;
@@ -62,9 +63,7 @@ function post_comment() {
 		f.recipient.value = "";
 		f.message.value = "";
 	});
-
-	var recipient = read_var('recipient');
-	ajax_post(xhttp, "message", `a=${read_var('client_id')}&m=${read_var('message')}&r=${recipient}`);
+	ajax_post(xhttp, "message", `a=${client_id}&m=${read_var('message')}&r=${read_var('recipient')}`);
 }
 
 function server_link(interval, f) {
@@ -82,7 +81,7 @@ server_link(1000, () => {
 
 server_link(1000, () => {
 	if (private_seen < private_total) {
-		ajax_get(`/message?r=${read_var('client_id')}&i=${private_seen}`, response => {
+		ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
 			private_seen++;
 			update_message_buffer("private_list", private_total, format_message(response));
 		})
@@ -93,7 +92,7 @@ server_link(500, () =>
 	ajax_get("/messages?r=public", r => public_total = r))
 
 server_link(500, () =>
-	ajax_get(`/messages?r=private&a=${read_var('client_id')}`, r => private_total = r))
+	ajax_get(`/messages?r=private&a=${client_id}`, r => private_total = r))
 
 function server_socket(url, onMessage) {
 	if ('WebSocket' in window) {
@@ -118,7 +117,7 @@ function server_socket(url, onMessage) {
 var monitor_feed;
 
 window.onload = function() {
-	update("id_banner", `contact ID: ${read_var('client_id')}`);
+	update("id_banner", `contact ID: ${client_id}`);
 	monitor_feed = server_socket("ws://localhost:3000/monitor", m => {
 		var d = m.data.split("\t");
 		update_message_buffer("event_list", d[0], d[1])
