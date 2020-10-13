@@ -1,6 +1,7 @@
 package main
 import "fmt"
-import H "html/template"
+import "html/template"
+import "io"
 import "net/http"
 import "os"
 import "strings"
@@ -22,44 +23,35 @@ func init() {
 	}
 }
 
-type Handler func(http.ResponseWriter, *http.Request)
-type CallBridge map[H.JS] Handler
+type WebHandler func(http.ResponseWriter, *http.Request)
+type CallBridge map[template.JS] WebHandler
 type PageConfiguration struct {
-	Version string
 	CallBridge
+}
+type Template interface {
+	Execute(io.Writer, interface{}) error
 }
 
 func main() {
-	var e error
-	var html *H.Template
-	var js *H.Template
-
-	p :=  PageConfiguration{ VERSION, CallBridge {
+	p := PageConfiguration{
+		CallBridge {
 			"A": AJAX_handler("A"),
 			"B": AJAX_handler("B"),
 			"C": AJAX_handler("C"),
 		},
 	}
 
-	html, e = H.ParseFiles(VERSION + ".html")
+	html, e := template.ParseFiles(VERSION + ".html")
 	Abort(FILE_READ, e)
 
-	js_file := VERSION + ".js"
-	js, e = H.ParseFiles(js_file)
+	js, e := template.ParseFiles(VERSION + ".js")
 	Abort(FILE_READ, e)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		Abort(BAD_TEMPLATE, html.Execute(w, p))
-	})
-
-	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/javascript")
-		Abort(BAD_TEMPLATE, js.Execute(w, p))
-	})
+	http.HandleFunc("/", ServeTemplate(html, "text/html", Tap(p)))
+	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", Tap(p)))
 
  	for c, f := range p.CallBridge {
-		http.HandleFunc(fmt.Sprint("/", c), f)
+		http.HandleFunc("/" + string(c), f)
 	}
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
@@ -71,9 +63,22 @@ func Abort(n int, e error) {
 	}
 }
 
-func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
+func Tap(v interface{}) func() interface{} {
+	return func() interface{} {
+		return v
+	}
+}
+
+func AJAX_handler(c string) WebHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, c)
+	}
+}
+
+func ServeTemplate(t Template, mime_type string, f func() interface{}) WebHandler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", mime_type)
+		Abort(BAD_TEMPLATE, t.Execute(w, f()))
 	}
 }
