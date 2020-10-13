@@ -1,11 +1,12 @@
 package main
 import "fmt"
-import H "html/template"
+import "io"
+import "io/ioutil"
 import "net/http"
 import "os"
 import "strings"
 import "time"
-import T "text/template"
+import "text/template"
 
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
@@ -26,33 +27,31 @@ func init() {
 	}
 }
 
+type WebHandler func(http.ResponseWriter, *http.Request)
 type Message struct {
 	TimeStamp, Author, Content string
 }
 type PageConfiguration struct {
-	Version string
 	Messages []Message
+}
+type Template interface {
+	Execute(io.Writer, interface{}) error
 }
 
 func main() {
-	var e error
-	var html *H.Template
-	var js *T.Template
+	var p PageConfiguration
 
-	p :=  PageConfiguration{ Version: VERSION }
-
-	html, e = H.ParseFiles(VERSION + ".html")
+	html, e := ioutil.ReadFile(VERSION + ".html")
 	Abort(FILE_READ, e)
 
-	js_file := VERSION + ".js"
-	js, e = T.ParseFiles(js_file)
+	js, e := template.ParseFiles(VERSION + ".js")
 	Abort(FILE_READ, e)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			w.Header().Set("Content-Type", "text/html")
-			Abort(BAD_TEMPLATE, html.Execute(w, p))
+			fmt.Fprint(w, string(html))
 
 		case "POST":
 			w.Header().Set("Content-Type", "text/plain")
@@ -67,10 +66,7 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/javascript")
-		Abort(BAD_TEMPLATE, js.Execute(w, p))
-	})
+	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", Tap(p)))
 
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
@@ -79,5 +75,18 @@ func Abort(n int, e error) {
 	if e != nil {
 		fmt.Println(e)
 		os.Exit(n)
+	}
+}
+
+func Tap(v interface{}) func() interface{} {
+	return func() interface{} {
+		return v
+	}
+}
+
+func ServeTemplate(t Template, mime_type string, f func() interface{}) WebHandler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", mime_type)
+		Abort(BAD_TEMPLATE, t.Execute(w, f()))
 	}
 }
