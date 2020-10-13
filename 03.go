@@ -6,7 +6,6 @@ import "os"
 const MESSAGE = "hello world"
 const LAUNCH_FAILED = 1
 
-
 var ADDRESS string
 
 func init() {
