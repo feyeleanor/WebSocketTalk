@@ -1,16 +1,15 @@
 package main
+import "errors"
 import "fmt"
-import H "html/template"
+import "io/ioutil"
 import "net/http"
 import "os"
 import "strconv"
 import "strings"
-import T "text/template"
 import "time"
 
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
-const BAD_TEMPLATE = 3
 
 const TIME_FORMAT = "Mon Jan 2 15:04:05 MST 2006"
 
@@ -27,66 +26,56 @@ func init() {
 	}
 }
 
+type WebHandler func(http.ResponseWriter, *http.Request)
 type Message struct {
 	TimeStamp, Author, Content string
 }
 type PageConfiguration struct {
-	Version string
 	Messages []Message
 }
 
 func main() {
-	var e error
-	var html *H.Template
-	var js *T.Template
+	var p PageConfiguration
 
-	p :=  PageConfiguration{ Version: VERSION }
-
-	html, e = H.ParseFiles(VERSION + ".html")
+	html, e := ioutil.ReadFile(VERSION + ".html")
 	Abort(FILE_READ, e)
 
-	js_file := VERSION + ".js"
-	js, e = T.ParseFiles(js_file)
+	js, e := ioutil.ReadFile(VERSION + ".js")
 	Abort(FILE_READ, e)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		Abort(BAD_TEMPLATE, html.Execute(w, p))
-	})
+	http.HandleFunc("/", ServeContent("text/html", html))
+	http.HandleFunc("/js", ServeContent("application/javascript", js))
+	http.HandleFunc("/messages",
+		ServeContent("text/plain", func(*http.Request) interface{} {
+			return len(p.Messages)
+		}),
+	)
 
-	http.HandleFunc("/message", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		r.ParseForm()
-		switch r.Method {
-		case "GET":
-			if i := r.Form["i"]; len(i) == 0 {
-				http.NotFound(w, r)
-			} else {
-				if i, e := ParseIndex(i[0]); e == nil && i < len(p.Messages) {
-					m := p.Messages[i]
-					fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
+	http.HandleFunc("/message",
+		ServeContent("text/plain", func(r *http.Request) (x interface{}) {
+			r.ParseForm()
+			switch r.Method {
+			case "GET":
+				if i := r.Form["i"]; len(i) == 0 {
+					x = errors.New("no index provided")
 				} else {
-					http.NotFound(w, r)
+					if i, e := ParseIndex(i[0]); e == nil && i < len(p.Messages) {
+						m := p.Messages[i]
+						x = fmt.Sprintf("%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
+					} else {
+						x = errors.New("invalid index")
+					}
 				}
+			case "POST":
+				p.Messages = append(p.Messages, Message {
+					TimeStamp: time.Now().Format(TIME_FORMAT),
+					Author: r.PostForm.Get("a"),
+					Content: r.PostForm.Get("m"),
+				})
 			}
-		case "POST":
-			p.Messages = append(p.Messages, Message {
-				TimeStamp: time.Now().Format(TIME_FORMAT),
-				Author: r.PostForm.Get("a"),
-				Content: r.PostForm.Get("m"),
-			})
-		}
-	})
-
-	http.HandleFunc("/messages", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain")
-		fmt.Fprint(w, len(p.Messages))
-	})
-
-	http.HandleFunc("/" + js_file, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/javascript")
-		Abort(BAD_TEMPLATE, js.Execute(w, p))
-	})
+			return
+		}),
+	)
 
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }
@@ -101,4 +90,23 @@ func Abort(n int, e error) {
 func ParseIndex(s string) (int, error) {
 	u, e := strconv.ParseUint(s, 10, 64)
 	return int(u), e
+}
+
+func ServeContent(mime_type string, v interface{}) WebHandler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", mime_type)
+		switch v := v.(type) {
+		case func(*http.Request) interface{}:
+			x := v(r)
+			if _, ok := x.(error); ok {
+				http.NotFound(w, r)
+			} else {
+				fmt.Fprintf(w, "%v", x)
+			}
+		case []byte:
+			fmt.Fprint(w, string(v))
+		default:
+			fmt.Fprintf(w, "%v", v)
+		}
+	}
 }
