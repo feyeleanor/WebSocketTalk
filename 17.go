@@ -32,6 +32,13 @@ func init() {
 	}
 }
 
+type Mutex struct { sync.Mutex }
+func (m Mutex) WithLock(f func()) {
+	m.Lock()
+	f()
+	m.Unlock()
+}
+
 type WebHandler func(http.ResponseWriter, *http.Request)
 type Message struct {
 	TimeStamp, Author, Content string
@@ -41,13 +48,13 @@ type PigeonHoles map[string] PigeonHole
 type PageConfiguration struct {
 	Clients int
 	PigeonHoles
-	sync.Mutex
+	Mutex
 }
 func (p *PageConfiguration) AddClient(f func()) {
-	p.Lock()
-	f()
-	p.Clients += 1
-	p.Unlock()
+	p.WithLock(func() {
+		f()
+		p.Clients += 1
+	})
 }
 
 func main() {
