@@ -73,11 +73,11 @@ server_link(1000, () =>
 
 server_link(250, () =>
 	ajax_get("/messages?r=public", response =>
-		update("public_count", `messages on server: ${response}`)));
+		update("public_count", response)));
 
 server_link(250, () =>
 	ajax_get(`/messages?r=private&a=${client_id}`, response =>
-		update("private_count", `messages on server: ${response}`)));
+		update("private_count", response)));
 
 window.onload = function() {
 	update("id_banner", `contact ID: ${client_id}`);
