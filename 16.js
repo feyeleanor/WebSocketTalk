@@ -114,7 +114,7 @@ function server_socket(url, onMessage) {
 	}
 }
 
-var monitor_feed = server_socket("ws://localhost:3000/monitor", m => {
+var monitor = server_socket("ws://localhost:3000/monitor", m => {
 	var d = m.data.split("\t");
 	update_message_buffer("event_list", d[0], d[1])
 })

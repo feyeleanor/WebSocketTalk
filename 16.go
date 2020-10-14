@@ -117,13 +117,13 @@ func main() {
 		),
 	)
 
-	var monitor_feeds []*websocket.Conn
+	var monitors []*websocket.Conn
 	go func() {
 		for {
 			select {
 			case m := <- events:
 				events_broadcast += 1
-				for _, ws := range monitor_feeds {
+				for _, ws := range monitors {
 					fmt.Fprintf(ws, "%v\t%v", events_broadcast, m)
 					
 				}
@@ -139,7 +139,7 @@ func main() {
 				events <- e.Error()
 			}
 		}()
-		monitor_feeds = append(monitor_feeds, ws)
+		monitors = append(monitors, ws)
 		ioutil.ReadAll(ws)
 	}))
 
