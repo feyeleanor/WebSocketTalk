@@ -84,7 +84,7 @@ func main() {
 		Monitor(events,
 			ServeContent("text/plain", func(r *http.Request) interface{} {
 				r.ParseForm()
-				return len(p.PigeonHoles[Feed("a", r)])
+				return len(p.PigeonHoles[ClientID("a", r)])
 			}),
 		),
 	)
@@ -95,7 +95,7 @@ func main() {
 				r.ParseForm()
 				switch r.Method {
 				case "GET":
-					q := Feed("r", r)
+					q := ClientID("r", r)
 					ph := p.PigeonHoles[q]
 					if i := MessageIndex(r); i < len(ph) {
 						m := ph[i]
@@ -105,7 +105,7 @@ func main() {
 					}
 
 				case "POST":
-					q := Feed("r", r)
+					q := ClientID("r", r)
 					p.PigeonHoles[q] = append(p.PigeonHoles[q], Message {
 						TimeStamp: time.Now().Format(TIME_FORMAT),
 						Author: r.PostForm.Get("a"),
@@ -186,7 +186,7 @@ func MessageIndex(r *http.Request) (i int) {
 	return
 }
 
-func Feed(n string, r *http.Request) (s string) {
+func ClientID(n string, r *http.Request) (s string) {
 	switch id := r.Form[strings.ToLower(n)]; {
 	case len(id) == 0:
 		fallthrough
