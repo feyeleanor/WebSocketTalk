@@ -132,7 +132,7 @@ func main() {
 					
 				}
 			default:
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(time.Millisecond)
 			}
 		}
 	}()
