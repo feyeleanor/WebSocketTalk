@@ -132,7 +132,6 @@ func main() {
 
 	http.Handle("/monitor", websocket.Handler(func(ws *websocket.Conn) {
 		defer func() {
-			fmt.Println("closing websocket")
 			if e := ws.Close(); e != nil {
 				events <- e.Error()
 			}
