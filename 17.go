@@ -82,7 +82,6 @@ func main() {
 				len(p.PigeonHoles[PUBLIC_ID]),
 				len(p.PigeonHoles[Feed("a", r)]),
 			)
-			fmt.Println(x)
 			return x
 		}),
 	)
