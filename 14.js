@@ -50,8 +50,10 @@ function server_link(interval, f) {
 
 server_link(1000, () =>
 	ajax_get(`/message?i=${comments_seen}`, response => {
-		print("message_list", format_message(JSON.parse(response)));
-		comments_seen++;
+		if (response.length > 0) {
+			print("message_list", format_message(JSON.parse(response)));
+			comments_seen++;
+		}
 	})
 );
 
