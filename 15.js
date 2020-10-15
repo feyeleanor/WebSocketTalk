@@ -55,15 +55,19 @@ function server_link(interval, f) {
 
 server_link(1000, () =>
 	ajax_get(`/message?r=0&i=${public_seen}`, response => {
-		print("public_list", format_message(JSON.parse(response)));
-		public_seen++;
+		if (response.length > 0) {
+			print("public_list", format_message(JSON.parse(response)));
+			public_seen++;
+		}
 	})
 );
 
 server_link(1000, () =>
 	ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
-		print("private_list", format_message(JSON.parse(response)));
-		private_seen++;
+		if (response.length > 0) {
+			print("private_list", format_message(JSON.parse(response)));
+			private_seen++;
+		}
 	})
 );
 
@@ -72,7 +76,7 @@ server_link(1000, () =>
 		update("public_count", JSON.parse(response))));
 
 server_link(1000, () =>
-	ajax_get(`/messages?r=private&a=${client_id}`, response =>
+	ajax_get(`/messages?r=0&a=${client_id}`, response =>
 		update("private_count", JSON.parse(response))));
 
 window.onload = function() {
