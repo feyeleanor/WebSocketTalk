@@ -10,12 +10,8 @@ function update(e, m) {
 	document.getElementById(e).innerHTML = m;
 }
 
-function format_message(t) {
-	var m = t.split("\t");
-	var author = m.shift();
-	var timestamp = m.shift();
-	var message = m.shift();
-	return `<hr/><h3>From: ${author}</h3><div>Date: ${timestamp}</div><div>${message}</div>`;
+function format_message(m) {
+	return `<hr/><h3>From: ${m.Author}</h3><div>Date: ${m.TimeStamp}</div><div>${m.Content}</div>`;
 }
 
 function move_message(e, o, d) {
@@ -33,7 +29,7 @@ function ajax_setup(f) {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			f(xhttp);
+			f(this);
 		}
 	};
 	return xhttp;	
@@ -51,11 +47,12 @@ function ajax_post(xhttp, url, params) {
 	xhttp.send(params);
 }
 
-const client_id = {{.Clients}};
+var client_id = 0;
 var public_seen = 0;
 var public_total = 0;
 var private_seen = 0;
 var private_total = 0;
+var events_total = 0;
 
 function post_comment() {
 	var xhttp = ajax_setup(x => {
@@ -71,31 +68,34 @@ function server_link(interval, f) {
 }
 
 server_link(1000, () => {
+	console.log(`/message?r=0&i=${public_seen}`)
+	console.log(`\tpublic_total: ${public_total}`)
 	if (public_seen < public_total) {
-		ajax_get(`/message?r=public&i=${public_seen}`, response => {
-			public_seen++;
-			update_message_buffer("public_list", public_total, format_message(response));
+		console.log("\tgrab next public message")
+		ajax_get(`/message?r=0&i=${public_seen}`, response => {
+			console.log(`\tresponse: |${response}|`)
+			if (response.length > 0) {
+				public_seen++;
+				update_message_buffer("public_list", public_total, format_message(JSON.parse(response)));
+			}
 		})
 	}
 });
 
 server_link(1000, () => {
+	console.log(`/message?r=${client_id}&i=${private_seen}`)
+	console.log(`\tprivate_total: ${private_total}`)
 	if (private_seen < private_total) {
+		console.log("\tgrab next private message")
 		ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
-			private_seen++;
-			update_message_buffer("private_list", private_total, format_message(response));
+			console.log(`\tresponse: |${response}|`)
+			if (response.length > 0) {
+				private_seen++;
+				update_message_buffer("private_list", private_total, format_message(JSON.parse(response)));
+			}
 		})
 	}
 });
-
-server_link(500, () =>
-	ajax_get(`/events?a=${client_id}`, r => {
-		var m = r.split("\t");
-		update("event_list_count", m.shift());
-		public_total = m.shift();
-		private_total = m.shift();
-	})
-);
 
 function server_socket(url, onMessage) {
 	var socket = new WebSocket(url);
@@ -106,11 +106,26 @@ function server_socket(url, onMessage) {
 	return socket;
 }
 
-var monitor = server_socket("ws://localhost:3000/monitor", m => {
-	var d = m.data.split("\t");
-	update_message_buffer("event_list", d[0], d[1])
-})
+var monitor = null;
 
 window.onload = function() {
-	update("id_banner", `contact ID: ${client_id}`);
+	monitor = server_socket("ws://localhost:3000/register", m => {
+		console.log(`client_id = ${m.data}`)
+		client_id = JSON.parse(m.data);
+		update("id_banner", client_id);
+		update("public_list_count", public_total);
+		update("private_list_count", private_total);
+		update("event_list_count", events_total);
+
+		monitor.onmessage = function(m) {
+			console.log(`m.data = ${m.data}`)
+			var d = JSON.parse(m.data);
+			events_total = d[0];
+			if (d[1] != "") {
+				update_message_buffer("event_list", events_total, `${events_total}: ${d[1]}`);
+			}
+			public_total = d[2];
+			private_total = d[3];
+		}
+	})
 }
