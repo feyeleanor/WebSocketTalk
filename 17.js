@@ -68,12 +68,8 @@ function server_link(interval, f) {
 }
 
 server_link(1000, () => {
-	console.log(`/message?r=0&i=${public_seen}`)
-	console.log(`\tpublic_total: ${public_total}`)
 	if (public_seen < public_total) {
-		console.log("\tgrab next public message")
 		ajax_get(`/message?r=0&i=${public_seen}`, response => {
-			console.log(`\tresponse: |${response}|`)
 			if (response.length > 0) {
 				public_seen++;
 				update_message_buffer("public_list", public_total, format_message(JSON.parse(response)));
@@ -83,12 +79,8 @@ server_link(1000, () => {
 });
 
 server_link(1000, () => {
-	console.log(`/message?r=${client_id}&i=${private_seen}`)
-	console.log(`\tprivate_total: ${private_total}`)
 	if (private_seen < private_total) {
-		console.log("\tgrab next private message")
 		ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
-			console.log(`\tresponse: |${response}|`)
 			if (response.length > 0) {
 				private_seen++;
 				update_message_buffer("private_list", private_total, format_message(JSON.parse(response)));
@@ -110,7 +102,6 @@ var monitor = null;
 
 window.onload = function() {
 	monitor = server_socket("ws://localhost:3000/register", m => {
-		console.log(`client_id = ${m.data}`)
 		client_id = JSON.parse(m.data);
 		update("id_banner", client_id);
 		update("public_list_count", public_total);
@@ -118,7 +109,6 @@ window.onload = function() {
 		update("event_list_count", events_total);
 
 		monitor.onmessage = function(m) {
-			console.log(`m.data = ${m.data}`)
 			var d = JSON.parse(m.data);
 			events_total = d[0];
 			if (d[1] != "") {
