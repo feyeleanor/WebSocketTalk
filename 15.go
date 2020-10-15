@@ -1,5 +1,5 @@
 package main
-import "bytes"
+import "encoding/json"
 import "errors"
 import "fmt"
 import "io/ioutil"
@@ -7,88 +7,71 @@ import "net/http"
 import "os"
 import "strconv"
 import "strings"
-import "text/template"
 import "time"
 
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
+const ADDRESS = ":3000"
 const TIME_FORMAT = "Mon Jan 2 15:04:05 MST 2006"
-const PUBLIC_ID = "public"
-
-var VERSION, ADDRESS string
-
-func init() {
-	s := strings.Split(os.Args[0], "/")
-	VERSION = s[len(s) - 1]
-
-	if p := os.Getenv("PORT"); len(p) == 0 {
-		ADDRESS = ":3000"
-	} else {
-		ADDRESS = ":" + p
-	}
-}
 
 type WebHandler func(http.ResponseWriter, *http.Request)
+
 type Message struct {
 	TimeStamp, Author, Content string
 }
+
 type PigeonHole []Message
-type PigeonHoles map[string] PigeonHole
-type PageConfiguration struct {
-	Clients int
-	PigeonHoles
-}
-func (p *PageConfiguration) AddClient(f func()) {
-	f()
-	p.Clients += 1
-}
 
 func main() {
-	p :=  &PageConfiguration { PigeonHoles: make(PigeonHoles) }
+	p := make([]PigeonHole, 1)
 
-	html, e := ioutil.ReadFile(VERSION + ".html")
+	html, e := ioutil.ReadFile(BaseName() + ".html")
 	Abort(FILE_READ, e)
 
-	js, e := template.ParseFiles(VERSION + ".js")
+	js, e := ioutil.ReadFile(BaseName() + ".js")
 	Abort(FILE_READ, e)
 
 	http.HandleFunc("/", ServeContent("text/html", html))
-	http.HandleFunc("/js",
-		ServeContent("application/javascript", func(*http.Request) interface{} {
-			var b bytes.Buffer
-			p.AddClient(func() {
-				Abort(BAD_TEMPLATE, js.Execute(&b, p))			
-			})
-			return b.String()
+	http.HandleFunc("/js", ServeContent("application/javascript", js))
+
+	http.HandleFunc("/register",
+		ServeContent("application/json", func(r *http.Request) interface{} {
+			id := len(p)
+			p = append(p, make(PigeonHole, 0))
+			b, _ := json.Marshal(id)
+			return string(b)
 		}),
 	)
 
 	http.HandleFunc("/messages",
-		ServeContent("text/plain", func(r *http.Request) interface{} {
+		ServeContent("application/json", func(r *http.Request) interface{} {
 			r.ParseForm()
-			return len(p.PigeonHoles[ClientID("a", r)])
+			id := ClientID("a", r)
+			b, _ := json.Marshal(len(p[id]))
+			return string(b)
 		}),
 	)
 
 	http.HandleFunc("/message",
-		ServeContent("text/plain", func(r *http.Request) (x interface{}) {
+		ServeContent("application/json", func(r *http.Request) (x interface{}) {
 			r.ParseForm()
 			switch r.Method {
 			case "GET":
 				q := ClientID("r", r)
-				ph := p.PigeonHoles[q]
+				ph := p[q]
 				if i := MessageIndex(r); i < len(ph) {
 					m := ph[i]
-					x = fmt.Sprintf("%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
+					b, _ := json.Marshal(m)
+					x = string(b)
 				} else {
 					x = errors.New("invalid index")
 				}
 
 			case "POST":
 				q := ClientID("r", r)
-				p.PigeonHoles[q] = append(p.PigeonHoles[q], Message {
+				p[q] = append(p[q], Message {
 					TimeStamp: time.Now().Format(TIME_FORMAT),
 					Author: r.PostForm.Get("a"),
 					Content: r.PostForm.Get("m"),
@@ -108,6 +91,11 @@ func Abort(n int, e error) {
 	}
 }
 
+func BaseName() string {
+	s := strings.Split(os.Args[0], "/")
+	return s[len(s) - 1]	
+}
+
 func ParseIndex(s string) (int, error) {
 	u, e := strconv.ParseUint(s, 10, 64)
 	return int(u), e
@@ -119,9 +107,10 @@ func ServeContent(mime_type string, v interface{}) WebHandler {
 		switch v := v.(type) {
 		case func(*http.Request) interface{}:
 			x := v(r)
-			if _, ok := x.(error); ok {
+			switch x := x.(type) {
+			case error:
 				http.NotFound(w, r)
-			} else {
+			default:
 				fmt.Fprintf(w, "%v", x)
 			}
 		case []byte:
@@ -141,14 +130,13 @@ func MessageIndex(r *http.Request) (i int) {
 	return
 }
 
-func ClientID(n string, r *http.Request) (s string) {
+func ClientID(n string, r *http.Request) (i int) {
 	switch id := r.Form[strings.ToLower(n)]; {
+	default:
+		i, _ = strconv.Atoi(id[0])
 	case len(id) == 0:
 		fallthrough
 	case len(id[0]) == 0:
-		s = PUBLIC_ID
-	default:
-		s = id[0]
 	}
 	return
 }

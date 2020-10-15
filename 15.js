@@ -11,11 +11,8 @@ function update(e, m) {
 }
 
 function format_message(t) {
-	var m = t.split("\t");
-	var author = m.shift();
-	var timestamp = m.shift();
-	var message = m.shift();
-	return `<hr/><h3>From: ${author}</h3><div>Date: ${timestamp}</div><div>${message}</div>`;
+	var m = JSON.parse(t)
+	return `<hr/><h3>From: ${m.Author}</h3><div>Date: ${m.TimeStamp}</div><div>${m.Content}</div>`;
 }
 
 function ajax_setup(f) {
@@ -40,7 +37,7 @@ function ajax_post(xhttp, url, params) {
 	xhttp.send(params);
 }
 
-const client_id = {{.Clients}};
+var client_id = 0;
 var public_seen = 0;
 var private_seen = 0;
 
@@ -58,7 +55,7 @@ function server_link(interval, f) {
 }
 
 server_link(1000, () =>
-	ajax_get(`/message?r=public&i=${public_seen}`, response => {
+	ajax_get(`/message?r=0&i=${public_seen}`, response => {
 		print("public_list", format_message(response));
 		public_seen++;
 	})
@@ -71,14 +68,17 @@ server_link(1000, () =>
 	})
 );
 
-server_link(250, () =>
-	ajax_get("/messages?r=public", response =>
+server_link(1000, () =>
+	ajax_get("/messages?r=0", response =>
 		update("public_count", response)));
 
-server_link(250, () =>
+server_link(1000, () =>
 	ajax_get(`/messages?r=private&a=${client_id}`, response =>
 		update("private_count", response)));
 
 window.onload = function() {
-	update("id_banner", `contact ID: ${client_id}`);
+	ajax_get("/register", response => {
+		client_id = JSON.parse(response);
+		update("id_banner", client_id);
+	});
 }
