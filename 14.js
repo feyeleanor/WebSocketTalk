@@ -10,8 +10,7 @@ function update(e, m) {
 	document.getElementById(e).innerHTML = m;
 }
 
-function format_message(t) {
-	var m = JSON.parse(t)
+function format_message(m) {
 	return `<hr/><h3>From: ${m.Author}</h3><div>Date: ${m.TimeStamp}</div><div>${m.Content}</div>`;
 }
 
@@ -51,7 +50,7 @@ function server_link(interval, f) {
 
 server_link(1000, () =>
 	ajax_get(`/message?i=${comments_seen}`, response => {
-		print("message_list", format_message(response));
+		print("message_list", format_message(JSON.parse(response)));
 		comments_seen++;
 	})
 );

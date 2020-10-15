@@ -10,8 +10,7 @@ function update(e, m) {
 	document.getElementById(e).innerHTML = m;
 }
 
-function format_message(t) {
-	var m = JSON.parse(t)
+function format_message(m) {
 	return `<hr/><h3>From: ${m.Author}</h3><div>Date: ${m.TimeStamp}</div><div>${m.Content}</div>`;
 }
 
@@ -56,14 +55,14 @@ function server_link(interval, f) {
 
 server_link(1000, () =>
 	ajax_get(`/message?r=0&i=${public_seen}`, response => {
-		print("public_list", format_message(response));
+		print("public_list", format_message(JSON.parse(response)));
 		public_seen++;
 	})
 );
 
 server_link(1000, () =>
 	ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
-		print("private_list", format_message(response));
+		print("private_list", format_message(JSON.parse(response)));
 		private_seen++;
 	})
 );
