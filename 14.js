@@ -11,18 +11,15 @@ function update(e, m) {
 }
 
 function format_message(t) {
-	var m = t.split("\t");
-	var author = m.shift();
-	var timestamp = m.shift();
-	var message = m.shift();
-	return `<hr/><h3>From: ${author}</h3><div>Date: ${timestamp}</div><div>${message}</div>`;
+	var m = JSON.parse(t)
+	return `<hr/><h3>From: ${m.Author}</h3><div>Date: ${m.TimeStamp}</div><div>${m.Content}</div>`;
 }
 
 function ajax_setup(f) {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			f(xhttp);
+			f(this);
 		}
 	};
 	return xhttp;	
@@ -61,5 +58,5 @@ server_link(1000, () =>
 
 server_link(250, () =>
 	ajax_get("/messages", response =>
-		update("message_count", `messages on server: ${response}`)),
+		update("message_count", JSON.parse(response)))
 );
