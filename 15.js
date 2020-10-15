@@ -19,7 +19,7 @@ function ajax_setup(f) {
 	var xhttp = new XMLHttpRequest();
 	xhttp.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			f(xhttp);
+			f(this);
 		}
 	};
 	return xhttp;	
@@ -70,11 +70,11 @@ server_link(1000, () =>
 
 server_link(1000, () =>
 	ajax_get("/messages?r=0", response =>
-		update("public_count", response)));
+		update("public_count", JSON.parse(response))));
 
 server_link(1000, () =>
 	ajax_get(`/messages?r=private&a=${client_id}`, response =>
-		update("private_count", response)));
+		update("private_count", JSON.parse(response))));
 
 window.onload = function() {
 	ajax_get("/register", response => {
