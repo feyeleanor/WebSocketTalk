@@ -7,8 +7,8 @@ function print(e, m) {
 }
 
 function format_message(t) {
-	var m = t.split("\t");
-	return `<hr/><h3>From: ${m[0]}</h3><div>Date: ${m[1]}</div><div>${m[2]}</div>`;
+	var m = JSON.parse(t)
+	return `<hr/><h3>From: ${m.Author}</h3><div>Date: ${m.TimeStamp}</div><div>${m.Content}</div>`;
 }
 
 function post_comment() {

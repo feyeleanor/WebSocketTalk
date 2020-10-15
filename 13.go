@@ -1,4 +1,5 @@
 package main
+import "encoding/json"
 import "fmt"
 import "io"
 import "io/ioutil"
@@ -12,25 +13,15 @@ const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
+const ADDRESS = ":3000"
 const TIME_FORMAT = "Mon Jan 2 15:04:05 MST 2006"
 
-var VERSION, ADDRESS string
-
-func init() {
-	s := strings.Split(os.Args[0], "/")
-	VERSION = s[len(s) - 1]
-
-	if p := os.Getenv("PORT"); len(p) == 0 {
-		ADDRESS = ":3000"
-	} else {
-		ADDRESS = ":" + p
-	}
-}
-
 type WebHandler func(http.ResponseWriter, *http.Request)
+
 type Message struct {
 	TimeStamp, Author, Content string
 }
+
 type PageConfiguration struct {
 	Messages []Message
 }
@@ -41,10 +32,10 @@ type Template interface {
 func main() {
 	var p PageConfiguration
 
-	html, e := ioutil.ReadFile(VERSION + ".html")
+	html, e := ioutil.ReadFile(BaseName() + ".html")
 	Abort(FILE_READ, e)
 
-	js, e := template.ParseFiles(VERSION + ".js")
+	js, e := template.ParseFiles(BaseName() + ".js")
 	Abort(FILE_READ, e)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +45,7 @@ func main() {
 			fmt.Fprint(w, string(html))
 
 		case "POST":
-			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Content-Type", "application/json")
 			r.ParseForm()
 			m := Message {
 				TimeStamp: time.Now().Format(TIME_FORMAT),
@@ -62,7 +53,8 @@ func main() {
 				Content: r.PostForm.Get("m"),
 			}
 			p.Messages = append(p.Messages, m)
-			fmt.Fprintf(w, "%v\t%v\t%v", m.Author, m.TimeStamp, m.Content)
+			b, _ := json.Marshal(m)
+			fmt.Fprint(w, string(b))
 		}
 	})
 
@@ -76,6 +68,11 @@ func Abort(n int, e error) {
 		fmt.Println(e)
 		os.Exit(n)
 	}
+}
+
+func BaseName() string {
+	s := strings.Split(os.Args[0], "/")
+	return s[len(s) - 1]	
 }
 
 func Tap(v interface{}) func() interface{} {
