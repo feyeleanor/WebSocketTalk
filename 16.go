@@ -1,6 +1,5 @@
 package main
 import "encoding/json"
-import "errors"
 import "fmt"
 import "golang.org/x/net/websocket"
 import "io/ioutil"
@@ -41,7 +40,7 @@ func main() {
 
 	http.HandleFunc("/register",
 		Monitor(events,
-			ServeContent("application/json", func(r *http.Request) interface{} {
+			ServeContent("application/json", func(r *http.Request) string {
 				id := len(p)
 				p = append(p, make(PigeonHole, 0))
 				b, _ := json.Marshal(id)
@@ -52,9 +51,9 @@ func main() {
 
 	http.HandleFunc("/messages",
 		Monitor(events,
-			ServeContent("application/json", func(r *http.Request) interface{} {
+			ServeContent("application/json", func(r *http.Request) string {
 				r.ParseForm()
-				id := ClientID("a", r)
+				id := Index("a", r)
 				b, _ := json.Marshal(len(p[id]))
 				return string(b)
 			}),
@@ -63,23 +62,21 @@ func main() {
 
 	http.HandleFunc("/message",
 		Monitor(events,
-			ServeContent("application/json", func(r *http.Request) (x interface{}) {
+			ServeContent("application/json", func(r *http.Request) (s string) {
 				r.ParseForm()
 				switch r.Method {
 				case "GET":
-					q := ClientID("r", r)
-					ph := p[q]
-					if i := MessageIndex(r); i < len(ph) {
+					id := Index("r", r)
+					ph := p[id]
+					if i := Index("i", r); i < len(ph) {
 						m := ph[i]
 						b, _ := json.Marshal(m)
-						x = string(b)
-					} else {
-						x = errors.New("invalid index")
+						s = string(b)
 					}
 
 				case "POST":
-					q := ClientID("r", r)
-					p[q] = append(p[q], Message {
+					id := Index("r", r)
+					p[id] = append(p[id], Message {
 						TimeStamp: time.Now().Format(TIME_FORMAT),
 						Author: r.PostForm.Get("a"),
 						Content: r.PostForm.Get("m"),
@@ -92,7 +89,7 @@ func main() {
 
 	http.HandleFunc("/events",
 		Monitor(events,
-			ServeContent("application/json", func(*http.Request) interface{} {
+			ServeContent("application/json", func(*http.Request) string {
 				b, _ := json.Marshal(events_broadcast)
 				return string(b)
 			}),
@@ -139,41 +136,8 @@ func BaseName() string {
 	return s[len(s) - 1]	
 }
 
-func ParseIndex(s string) (int, error) {
-	u, e := strconv.ParseUint(s, 10, 64)
-	return int(u), e
-}
-
-func ServeContent(mime_type string, v interface{}) WebHandler {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", mime_type)
-		switch v := v.(type) {
-		case func(*http.Request) interface{}:
-			x := v(r)
-			if _, ok := x.(error); ok {
-				http.NotFound(w, r)
-			} else {
-				fmt.Fprintf(w, "%v", x)
-			}
-		case []byte:
-			fmt.Fprint(w, string(v))
-		default:
-			fmt.Fprintf(w, "%v", v)
-		}
-	}
-}
-
-func MessageIndex(r *http.Request) (i int) {
-	if len(r.Form["i"]) != 0 {
-		if n, e := ParseIndex(r.Form["i"][0]); e == nil {
-			i = n
-		}
-	}
-	return
-}
-
-func ClientID(n string, r *http.Request) (i int) {
-	switch id := r.Form[strings.ToLower(n)]; {
+func Index(s string, r *http.Request) (i int) {
+	switch id := r.Form[s]; {
 	default:
 		i, _ = strconv.Atoi(id[0])
 	case len(id) == 0:
@@ -181,6 +145,20 @@ func ClientID(n string, r *http.Request) (i int) {
 	case len(id[0]) == 0:
 	}
 	return
+}
+
+func ServeContent(mime_type string, v interface{}) WebHandler {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", mime_type)
+		switch v := v.(type) {
+		case func(*http.Request) string:
+			fmt.Fprintf(w, "%v", v(r))
+		case []byte:
+			fmt.Fprint(w, string(v))
+		default:
+			fmt.Fprintf(w, "%v", v)
+		}
+	}
 }
 
 func Monitor(c chan string, f WebHandler) WebHandler {

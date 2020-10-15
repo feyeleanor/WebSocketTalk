@@ -70,8 +70,10 @@ function server_link(interval, f) {
 server_link(1000, () => {
 	if (public_seen < public_total) {
 		ajax_get(`/message?r=0&i=${public_seen}`, response => {
-			public_seen++;
-			update_message_buffer("public_list", public_total, format_message(JSON.parse(response)));
+			if (response.length > 0) {
+				public_seen++;
+				update_message_buffer("public_list", public_total, format_message(JSON.parse(response)));
+			}
 		})
 	}
 });
@@ -79,8 +81,10 @@ server_link(1000, () => {
 server_link(1000, () => {
 	if (private_seen < private_total) {
 		ajax_get(`/message?r=${client_id}&i=${private_seen}`, response => {
-			private_seen++;
-			update_message_buffer("private_list", private_total, format_message(JSON.parse(response)));
+			if (response.length > 0) {
+				private_seen++;
+				update_message_buffer("private_list", private_total, format_message(JSON.parse(response)));
+			}
 		})
 	}
 });
@@ -91,7 +95,7 @@ server_link(500, () =>
 ));
 
 server_link(500, () =>
-	ajax_get(`/messages?r=private&a=${client_id}`, response =>
+	ajax_get(`/messages?r=0&a=${client_id}`, response =>
 		private_total = JSON.parse(response)
 ));
 
