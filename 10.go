@@ -10,18 +10,7 @@ const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
-var VERSION, ADDRESS string
-
-func init() {
-	s := strings.Split(os.Args[0], "/")
-	VERSION = s[len(s) - 1]
-
-	if p := os.Getenv("PORT"); len(p) == 0 {
-		ADDRESS = ":3000"
-	} else {
-		ADDRESS = ":" + p
-	}
-}
+const ADDRESS = ":3000"
 
 type WebHandler func(http.ResponseWriter, *http.Request)
 type Commands map[string] func(http.ResponseWriter, *http.Request)
@@ -33,6 +22,12 @@ type Template interface {
 }
 
 func main() {
+	html, e := template.ParseFiles(BaseName() + ".html")
+	Abort(FILE_READ, e)
+
+	js, e := template.ParseFiles(BaseName() + ".js")
+	Abort(FILE_READ, e)
+
 	p := PageConfiguration{
 		Commands {
 			"A": AJAX_handler("A"),
@@ -40,12 +35,6 @@ func main() {
 			"C": AJAX_handler("C"),
 		},
 	}
-
-	html, e := template.ParseFiles(VERSION + ".html")
-	Abort(FILE_READ, e)
-
-	js, e := template.ParseFiles(VERSION + ".js")
-	Abort(FILE_READ, e)
 
 	http.HandleFunc("/", ServeTemplate(html, "text/html", Tap(p)))
 	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", Tap(p)))
@@ -61,6 +50,11 @@ func Abort(n int, e error) {
 		fmt.Println(e)
 		os.Exit(n)
 	}
+}
+
+func BaseName() string {
+	s := strings.Split(os.Args[0], "/")
+	return s[len(s) - 1]	
 }
 
 func Tap(v interface{}) func() interface{} {

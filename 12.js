@@ -7,7 +7,8 @@ function print(e, m) {
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
 			if (this.readyState == 4 && this.status == 200) {
-				print("event_log", this.responseText);
+				var m = JSON.parse(this.responseText);
+				print("event_log", `${m.Command}: ${m.Method} ${m.URL} (${m.Values})`);
 			}
 		};
 		switch(method) {

@@ -8,22 +8,16 @@ import "strings"
 const LAUNCH_FAILED = 1
 const FILE_READ = 2
 
-var ADDRESS, MESSAGE string
+const ADDRESS = ":3000"
 
-func init() {
-	if p := os.Getenv("PORT"); len(p) == 0 {
-		ADDRESS = ":3000"
-	} else {
-		ADDRESS = ":" + p
-	}
+var MESSAGE string
 
+func main() {
 	s := strings.Split(os.Args[0], "/")
 	html, e := ioutil.ReadFile(s[len(s) - 1] + ".html")
 	Abort(FILE_READ, e)
 	MESSAGE = string(html)
-}
 
-func main() {
 	http.HandleFunc("/", billboard)
 	Abort(LAUNCH_FAILED, http.ListenAndServe(ADDRESS, nil))
 }

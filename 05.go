@@ -5,15 +5,7 @@ import "os"
 
 const LAUNCH_FAILED = 1
 
-var ADDRESS string
-
-func init() {
-	if p := os.Getenv("PORT"); len(p) == 0 {
-		ADDRESS = ":3000"
-	} else {
-		ADDRESS = ":" + p
-	}
-}
+const ADDRESS = ":3000"
 
 func main() {
 	http.HandleFunc("/", print_url)

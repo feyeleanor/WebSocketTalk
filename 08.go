@@ -9,25 +9,14 @@ const LAUNCH_FAILED = 1
 const FILE_READ = 2
 const BAD_TEMPLATE = 3
 
-var VERSION, ADDRESS string
-
-func init() {
-	s := strings.Split(os.Args[0], "/")
-	VERSION = s[len(s) - 1]
-
-	if p := os.Getenv("PORT"); len(p) == 0 {
-		ADDRESS = ":3000"
-	} else {
-		ADDRESS = ":" + p
-	}
-}
+const ADDRESS = ":3000"
 
 type PageContent struct {
 	Title, Heading, Message string
 }
 
 func main() {
-	html, e := template.ParseFiles(VERSION + ".html")
+	html, e := template.ParseFiles(BaseName() + ".html")
 	Abort(FILE_READ, e)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -46,4 +35,9 @@ func Abort(n int, e error) {
     	fmt.Println(e)
 		os.Exit(n)
 	}
+}
+
+func BaseName() string {
+	s := strings.Split(os.Args[0], "/")
+	return s[len(s) - 1]	
 }
