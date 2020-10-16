@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8' />
+		<title>SIMPLE GUESTBOOK EXAMPLE</title>
+    <script src="js"></script>
+	</head>
+
+	<body>
+		<h1>MESSAGE FEEDS #{<span id="id_banner"></span>}</h1>
+    <h2><span id="event_count"></span> Events</h2>
+
+    <h2>Add Message</h2>
+    <form id="addMessage">
+      <div>
+        <label for="recipient">Recipient</label>
+        <input type="text" id="recipient" name="recipient">
+      </div>
+      <div>
+        <label for="message">Comment</label>
+        <textarea id="message" name="message"></textarea>
+      </div>
+      <input type="button" onclick="post_comment();" value="Submit!">
+    </form>
+
+    <h2><span id="public_list_count"></span> Broadcast Messages</h2>
+    <div id="public_list">
+      <div id="public_list_0"></div>
+      <div id="public_list_1"></div>
+      <div id="public_list_2"></div>
+      <div id="public_list_3"></div>
+    </div>
+
+    <h2><span id="private_list_count"></span> Private Messages</h2>
+    <div id="private_list">
+      <div id="private_list_0"></div>
+      <div id="private_list_1"></div>
+      <div id="private_list_2"></div>
+      <div id="private_list_3"></div>
+    </div>
+	</body>
+</html>
