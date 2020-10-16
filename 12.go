@@ -37,8 +37,8 @@ func main() {
 		},
 	}
 
-	http.HandleFunc("/", ServeTemplate(html, "text/html", Tap(p)))
-	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", Tap(p)))
+	http.HandleFunc("/", ServeTemplate(html, "text/html", p))
+	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", p))
 
  	for c, f := range p.CallBridge {
 		http.HandleFunc("/" + string(c), f)
@@ -56,12 +56,6 @@ func Abort(n int, e error) {
 func BaseName() string {
 	s := strings.Split(os.Args[0], "/")
 	return s[len(s) - 1]	
-}
-
-func Tap(v interface{}) func() interface{} {
-	return func() interface{} {
-		return v
-	}
 }
 
 type Message struct {
@@ -87,9 +81,9 @@ func AJAX_handler(c string) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func ServeTemplate(t Template, mime_type string, f func() interface{}) WebHandler {
+func ServeTemplate(t Template, mime_type string, v interface{}) WebHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", mime_type)
-		Abort(BAD_TEMPLATE, t.Execute(w, f()))
+		Abort(BAD_TEMPLATE, t.Execute(w, v))
 	}
 }

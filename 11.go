@@ -37,8 +37,8 @@ func main() {
 		},
 	}
 
-	http.HandleFunc("/", ServeTemplate(html, "text/html", Tap(p)))
-	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", Tap(p)))
+	http.HandleFunc("/", ServeTemplate(html, "text/html", p))
+	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", p))
 
  	for c, f := range p.CallBridge {
 		http.HandleFunc("/" + string(c), f)
@@ -58,12 +58,6 @@ func BaseName() string {
 	return s[len(s) - 1]	
 }
 
-func Tap(v interface{}) func() interface{} {
-	return func() interface{} {
-		return v
-	}
-}
-
 func AJAX_handler(c string) WebHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -72,9 +66,9 @@ func AJAX_handler(c string) WebHandler {
 	}
 }
 
-func ServeTemplate(t Template, mime_type string, f func() interface{}) WebHandler {
+func ServeTemplate(t Template, mime_type string, v interface{}) WebHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", mime_type)
-		Abort(BAD_TEMPLATE, t.Execute(w, f()))
+		Abort(BAD_TEMPLATE, t.Execute(w, v))
 	}
 }

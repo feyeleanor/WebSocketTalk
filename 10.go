@@ -17,9 +17,6 @@ type Commands map[string] func(http.ResponseWriter, *http.Request)
 type PageConfiguration struct {
 	Commands
 }
-type Template interface {
-	Execute(io.Writer, interface{}) error
-}
 
 func main() {
 	html, e := template.ParseFiles(BaseName() + ".html")
@@ -36,8 +33,15 @@ func main() {
 		},
 	}
 
-	http.HandleFunc("/", ServeTemplate(html, "text/html", Tap(p)))
-	http.HandleFunc("/js", ServeTemplate(js, "application/javascript", Tap(p)))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		Abort(BAD_TEMPLATE, html.Execute(w, p))
+	})
+
+ 	http.HandleFunc("/js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript")
+		Abort(BAD_TEMPLATE, js.Execute(w, p))
+ 	})
 
  	for c, f := range p.Commands {
 		http.HandleFunc("/" + c, f)
@@ -57,22 +61,9 @@ func BaseName() string {
 	return s[len(s) - 1]	
 }
 
-func Tap(v interface{}) func() interface{} {
-	return func() interface{} {
-		return v
-	}
-}
-
 func AJAX_handler(c string) WebHandler {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprint(w, c)
-	}
-}
-
-func ServeTemplate(t Template, mime_type string, f func() interface{}) WebHandler {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", mime_type)
-		Abort(BAD_TEMPLATE, t.Execute(w, f()))
 	}
 }
