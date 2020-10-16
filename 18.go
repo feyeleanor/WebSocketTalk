@@ -30,23 +30,16 @@ type PigeonHole struct {
 type PigeonHoles []*PigeonHole
 func (p PigeonHoles) Tick(d time.Duration) {
 	if p[0].Cursor < len(p[0].Messages) {
-fmt.Println("BROADCASTING")
 		m := p[0].Messages[p[0].Cursor]
-fmt.Println("m =", m)
 		for _, ph := range p[1:] {
 			if ph.Conn != nil {
 				SendJSON(ph.Conn, "broadcast", m)
 			}
 		}
 		p[0].Cursor += 1
-fmt.Println("p[0].Cursor =", p[0].Cursor)
 	}
 
-fmt.Println("DELIVERING MAIL")
-	for i, ph := range p[1:] {
-fmt.Println("mailbox:", i + 1)
-fmt.Println("ph.Cursor:", ph.Cursor)
-fmt.Println("ph.Messages:", ph.Messages)
+	for _, ph := range p[1:] {
 		if ph.Conn != nil && ph.Cursor < len(ph.Messages) {
 			SendJSON(ph.Conn, "private", ph.Messages[ph.Cursor])
 			ph.Cursor += 1
@@ -123,8 +116,6 @@ func main() {
 		for {
 			if e := websocket.JSON.Receive(ws, &b); e == nil {
 				r, _ := strconv.Atoi(b.Recipient)
-				fmt.Println("recv: r =", r)
-				fmt.Println("recv: b.Content =", b.Content)
 				events <- fmt.Sprint("recv:", b)
 				p[r].Messages = append(p[r].Messages, Message {
 					TimeStamp: time.Now().Format(TIME_FORMAT),
@@ -133,6 +124,7 @@ func main() {
 				})
 			} else {
 				fmt.Println("socket receive error:", e)
+				break
 			}
 		}
 	}))
