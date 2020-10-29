@@ -1,6 +1,5 @@
 package main
 import "fmt"
-import "io"
 import "net/http"
 import "os"
 import "strings"
@@ -13,7 +12,7 @@ const BAD_TEMPLATE = 3
 const ADDRESS = ":3000"
 
 type WebHandler func(http.ResponseWriter, *http.Request)
-type Commands map[string] func(http.ResponseWriter, *http.Request)
+type Commands map[string] WebHandler
 type PageConfiguration struct {
 	Commands
 }
