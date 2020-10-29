@@ -85,12 +85,13 @@ func main() {
 
 	p = PigeonHoles{
 		NewPigeonHole(nil, func(_ *PigeonHole, m *Message) {
+			i := p[0].int
 			for ; p[0].Pending() > 0; p[0].Advance() {}
 			for _, ph := range p[1:] {
 				if ph.Conn != nil {
 					go func(ph *PigeonHole) {
 						SendStatus(ph.Conn, p[0].Messages, ph.Messages)
-						for _, m := range p[0].Messages {
+						for _, m := range p[0].Messages[i:] {
 							ph.Send("broadcast", m)
 						}
 					}(ph)
